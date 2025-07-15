@@ -38,3 +38,4 @@ export const login = async (req, res) => {
     res.status(500).json({ msg: 'Login failed', err });
   }
 };
+ 
