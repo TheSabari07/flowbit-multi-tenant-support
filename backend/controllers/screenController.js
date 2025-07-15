@@ -1,4 +1,8 @@
-import registry from '../registry.json' assert { type: 'json' };
+import fs from 'fs';
+import path from 'path';
+
+const registryPath = path.resolve('registry.json');
+const registry = JSON.parse(fs.readFileSync(registryPath, 'utf-8'));
 
 export const getScreens = (req, res) => {
   const { customerId } = req.user;
@@ -8,3 +12,4 @@ export const getScreens = (req, res) => {
 
   res.json({ screens });
 };
+
