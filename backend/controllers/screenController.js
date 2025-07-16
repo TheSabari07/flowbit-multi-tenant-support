@@ -12,4 +12,3 @@ export const getScreens = (req, res) => {
 
   res.json({ screens });
 };
-
