@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import API from '../services/api';
 import Sidebar from '../components/Sidebar';
+import SupportTicketsApp from '../components/SupportTicketsApp';
+
 
 const Home = () => {
   const [screens, setScreens] = useState([]);
