@@ -1,25 +1,30 @@
 import Ticket from '../models/Ticket.js';
 import axios from 'axios';
 
-const N8N_WEBHOOK_URL = 'http://n8n:5678/webhook/test-flow'; 
+const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
 
 export const createTicket = async (req, res) => {
   const { title } = req.body;
-  const { userId, customerId } = req.user;
+  const { id: userId, customerId } = req.user;
+
+  console.log('User:', req.user);
+  console.log('Body:', req.body);
 
   try {
     const ticket = await Ticket.create({ title, customerId, createdBy: userId });
 
     await axios.post(N8N_WEBHOOK_URL, {
       ticketId: ticket._id,
-      customerId
+      customerId,
     });
 
     res.status(201).json(ticket);
   } catch (err) {
-    res.status(500).json({ msg: 'Failed to create ticket', err });
+    console.error('Ticket creation failed:', err);
+    res.status(500).json({ msg: 'Failed to create ticket', error: err.message });
   }
 };
+
 
 export const webhookCallback = async (req, res) => {
   const { ticketId, status } = req.body;
