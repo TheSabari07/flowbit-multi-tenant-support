@@ -178,10 +178,3 @@ FlowBit/
 5. **Load Balancing**: Use nginx or similar for production deployment
 6. **Backup**: Implement database backup strategies
 
-## 📞 Support
-
-For questions or issues, please contact: soham.shah@flowbitai.com
-
----
-
-**Built with ❤️ for FlowBit AI**
