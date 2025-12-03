@@ -1,11 +1,9 @@
 import Ticket from '../models/Ticket.js';
 import axios from 'axios';
 
-const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
-
 export const createTicket = async (req, res) => {
   const { title } = req.body;
-  const { id: userId, customerId } = req.user;
+  const { userId, customerId } = req.user;
 
   console.log('User:', req.user);
   console.log('Body:', req.body);
@@ -13,10 +11,22 @@ export const createTicket = async (req, res) => {
   try {
     const ticket = await Ticket.create({ title, customerId, createdBy: userId });
 
-    await axios.post(N8N_WEBHOOK_URL, {
-      ticketId: ticket._id,
-      customerId,
-    });
+    // Try to trigger n8n workflow if configured
+    const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL;
+    if (N8N_WEBHOOK_URL) {
+      try {
+        await axios.post(N8N_WEBHOOK_URL, {
+          ticketId: ticket._id,
+          customerId,
+          title: ticket.title
+        });
+        console.log('n8n workflow triggered successfully');
+      } catch (webhookError) {
+        console.log('n8n webhook failed (continuing anyway):', webhookError.message);
+      }
+    } else {
+      console.log('N8N_WEBHOOK_URL not configured - skipping workflow trigger');
+    }
 
     res.status(201).json(ticket);
   } catch (err) {
@@ -25,6 +35,20 @@ export const createTicket = async (req, res) => {
   }
 };
 
+export const getTickets = async (req, res) => {
+  try {
+    const { customerId } = req.user;
+    
+    // Only return tickets for the current tenant
+    const tickets = await Ticket.find({ customerId })
+      .populate('createdBy', 'email')
+      .sort({ createdAt: -1 });
+    
+    res.json(tickets);
+  } catch (err) {
+    res.status(500).json({ msg: 'Failed to fetch tickets', error: err.message });
+  }
+};
 
 export const webhookCallback = async (req, res) => {
   const { ticketId, status } = req.body;

@@ -2,12 +2,15 @@ version: '3.8'
 
 services:
   mongo:
-    image: mongo
+    image: mongo:latest
     restart: always
     ports:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password
 
   backend:
     build: ./backend
@@ -15,13 +18,31 @@ services:
       - "5007:5007"
     volumes:
       - ./backend:/app
-    env_file:
-      - ./backend/.env
+      - /app/node_modules
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongo:27017/flowbit?authSource=admin
+      - JWT_SECRET=your-super-secret-jwt-key-change-in-production
+      - N8N_WEBHOOK_URL=http://n8n:5678/webhook/ticket-created
+      - WEBHOOK_SECRET=flowbit-webhook-secret-2024
     depends_on:
       - mongo
+    restart: always
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:5007
+    depends_on:
+      - backend
+    restart: always
 
   n8n:
-    image: n8nio/n8n
+    image: n8nio/n8n:latest
     ports:
       - "5678:5678"
     environment:
@@ -29,8 +50,24 @@ services:
       - N8N_HOST=n8n
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
+      - N8N_WEBHOOK_URL=http://n8n:5678
+      - WEBHOOK_SECRET=flowbit-webhook-secret-2024
+      - BACKEND_URL=http://backend:5007
     volumes:
       - n8n-data:/home/node/.n8n
+    depends_on:
+      - backend
+    restart: always
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    ports:
+      - "4040:4040"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN:-}
+    command: http backend:5007
+    depends_on:
+      - backend
     restart: always
 
 volumes:

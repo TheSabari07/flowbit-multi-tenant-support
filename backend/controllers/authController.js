@@ -10,7 +10,12 @@ export const register = async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await User.create({ email, passwordHash, role, customerId });
-    const token = generateToken({ userId: user._id, customerId, role });
+    const token = generateToken({ 
+      userId: user._id, 
+      customerId, 
+      role,
+      email: user.email 
+    });
 
     res.json({ token });
   } catch (err) {
@@ -30,7 +35,8 @@ export const login = async (req, res) => {
     const token = generateToken({
       userId: user._id,
       customerId: user.customerId,
-      role: user.role
+      role: user.role,
+      email: user.email
     });
 
     res.json({ token });
